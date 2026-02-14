@@ -1,0 +1,120 @@
+<div class="otp-container">
+  <!-- Header Logo -->
+  <div class="otp-header">
+    <div class="logo-wrapper">
+      <div class="logo-icon">
+        <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="8" fill="#6366F1"/>
+          <path d="M20 10L12 15V25C12 28.866 15.582 32 20 32C24.418 32 28 28.866 28 25V15L20 10Z"
+                stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1 class="logo-text">VMS</h1>
+    </div>
+  </div>
+
+  <!-- OTP Card -->
+  <div class="otp-card">
+    <!-- Email Icon -->
+    <div class="email-icon">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="56" height="56" rx="16" fill="#6366F1"/>
+        <path d="M16 20H40C41.1 20 42 20.9 42 22V34C42 35.1 41.1 36 40 36H16C14.9 36 14 35.1 14 34V22C14 20.9 14.9 20 16 20Z"
+              stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M42 22L28 29L14 22" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Title -->
+    <h2 class="otp-title">Verify Identity</h2>
+
+    <!-- Description -->
+    <p class="otp-description">
+      We've sent a 6-digit verification code to your email
+    </p>
+
+    <!-- Masked Email -->
+    <p class="masked-email">{{ maskedEmail }}</p>
+
+    <!-- OTP Input Form -->
+    <form (ngSubmit)="verifyOTP()" class="otp-form">
+      <!-- OTP Input Boxes -->
+      <div class="otp-inputs">
+        <input
+          *ngFor="let digit of otpDigits; let i = index"
+          #otpInput
+          type="text"
+          maxlength="1"
+          class="otp-input"
+          [class.filled]="digit"
+          [class.error]="hasError"
+          [(ngModel)]="otpDigits[i]"
+          [name]="'otp' + i"
+          (input)="onOtpInput($event, i)"
+          (keydown)="onOtpKeydown($event, i)"
+          (paste)="onOtpPaste($event)"
+          [disabled]="isVerifying"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          autocomplete="off">
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="errorMessage">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 4V8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="8" cy="11" r="0.5" fill="currentColor"/>
+        </svg>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Verify Button -->
+      <button
+        type="submit"
+        class="verify-button"
+        [class.loading]="isVerifying"
+        [disabled]="!isOtpComplete() || isVerifying">
+        <span *ngIf="!isVerifying">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12H19M19 12L12 5M19 12L12 19"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Verify & Continue
+        </span>
+        <span *ngIf="isVerifying" class="loading-spinner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" opacity="0.25"/>
+            <path d="M12 2a10 10 0 0110 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Verifying...
+        </span>
+      </button>
+    </form>
+
+    <!-- Resend Section -->
+    <div class="resend-section">
+      <p class="resend-text">Didn't receive the code?</p>
+      <button
+        type="button"
+        class="resend-button"
+        [disabled]="resendTimer > 0 || isResending"
+        (click)="resendOTP()">
+        <span *ngIf="resendTimer === 0 && !isResending">Resend Code</span>
+        <span *ngIf="resendTimer > 0">Resend in {{ resendTimer }}s</span>
+        <span *ngIf="isResending">Sending...</span>
+      </button>
+    </div>
+
+    <!-- Back to Register -->
+    <div class="back-link">
+      <button type="button" class="link-button" (click)="goBack()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M19 12H5M5 12L12 19M5 12L12 5"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to Registration
+      </button>
+    </div>
+  </div>
+</div>

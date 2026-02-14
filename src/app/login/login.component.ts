@@ -128,7 +128,7 @@ export class LoginComponent implements OnInit {
   }
 
   createAccount(): void {
-    alert('Registration feature coming soon!');
+    this.router.navigate(['/register']);
   }
 
   visitorCheckIn(): void {
