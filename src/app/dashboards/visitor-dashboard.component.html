@@ -11,21 +11,45 @@
   </header>
 
   <main class="dash-main">
-    <div class="dash-card">
-      <div class="dash-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-          <rect x="3" y="3" width="7" height="7" rx="1" stroke="white" stroke-width="2" />
-          <rect x="14" y="3" width="7" height="7" rx="1" stroke="white" stroke-width="2" />
-          <rect x="3" y="14" width="7" height="7" rx="1" stroke="white" stroke-width="2" />
-          <path d="M14 14h3v3h-3zM18 18h3v3h-3z" stroke="white" stroke-width="2" />
-        </svg>
+    <div class="qr-card">
+      <h1>Your Secure Access Pass</h1>
+      <p class="qr-sub">Show this QR code to the security guard at the gate.</p>
+
+      <div class="qr-frame">
+        <!-- Loading -->
+        <div class="qr-state" *ngIf="loading && !qrDataUrl">
+          <div class="spinner"></div>
+          <span>Generating secure code…</span>
+        </div>
+
+        <!-- Error -->
+        <div class="qr-state qr-error" *ngIf="error">
+          <span>⚠️ {{ error }}</span>
+          <button class="qr-retry" (click)="refreshQr()">Retry</button>
+        </div>
+
+        <!-- QR image -->
+        <img *ngIf="qrDataUrl && !error" [src]="qrDataUrl" alt="Secure QR access pass" class="qr-img"
+          [class.expiring]="countdown <= 5" />
       </div>
-      <h1>Welcome, {{ user?.fullName }}</h1>
-      <p class="sub">You are signed in as a Visitor.</p>
-      <div class="note">
-        🔐 Your secure, auto-refreshing QR access pass will appear here in
-        <strong>Phase 2</strong> (Dynamic Secure QR Generation).
+
+      <!-- Countdown -->
+      <div class="qr-timer" *ngIf="qrDataUrl && !error">
+        <div class="qr-bar"><div class="qr-bar-fill" [style.width.%]="progress"></div></div>
+        <p class="qr-count">
+          Refreshes in <strong>{{ countdown }}s</strong>
+        </p>
       </div>
+
+      <div class="qr-badges">
+        <span class="qr-badge">🔐 AES-encrypted</span>
+        <span class="qr-badge">✍️ RSA-signed</span>
+        <span class="qr-badge">⏱️ 30s one-time</span>
+      </div>
+
+      <p class="qr-hint">
+        This pass changes every 30&nbsp;seconds and cannot be reused — a screenshot will not work.
+      </p>
     </div>
   </main>
 </div>

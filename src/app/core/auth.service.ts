@@ -6,6 +6,7 @@ import {
   AppUser,
   AuthResponse,
   LoginPayload,
+  LoginResponse,
   MessageResponse,
   OtpChallengeResponse,
   OtpPurpose,
@@ -43,8 +44,15 @@ export class AuthService {
     return this.http.post<MessageResponse>(`${this.base}/register/verify-otp`, { email, code });
   }
 
-  login(payload: LoginPayload): Observable<OtpChallengeResponse> {
-    return this.http.post<OtpChallengeResponse>(`${this.base}/login`, payload);
+  login(payload: LoginPayload): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.base}/login`, payload).pipe(
+      // Admins skip OTP: the cookie is already set and the user is returned.
+      tap((res) => {
+        if (!res.otpRequired && res.user) {
+          this.setUser(res.user);
+        }
+      })
+    );
   }
 
   verifyLogin(email: string, code: string): Observable<AuthResponse> {

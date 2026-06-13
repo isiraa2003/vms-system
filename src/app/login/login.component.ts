@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 
@@ -27,7 +27,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private auth: AuthService
+    private auth: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -104,14 +105,20 @@ export class LoginComponent implements OnInit {
     this.auth.login({ email: this.email, password: this.password }).subscribe({
       next: (res) => {
         this.isLoading = false;
-        // Step 2: verify the login OTP (2FA).
-        this.router.navigate(['/verify-otp'], {
-          state: { email: res.email, purpose: 'LOGIN' }
-        });
+        if (res.otpRequired) {
+          // Step 2: verify the login OTP (2FA).
+          this.router.navigate(['/verify-otp'], {
+            state: { email: res.email, purpose: 'LOGIN' }
+          });
+        } else if (res.user) {
+          // Admin fast-path: already authenticated, go straight to the dashboard.
+          this.router.navigate([this.auth.dashboardRoute(res.user.role)]);
+        }
       },
       error: (err) => {
         this.isLoading = false;
         this.serverError = err?.error?.message || 'Login failed. Please try again.';
+        this.cdr.detectChanges();
       }
     });
   }

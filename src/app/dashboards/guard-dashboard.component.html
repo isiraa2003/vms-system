@@ -10,20 +10,57 @@
     </div>
   </header>
 
-  <main class="dash-main">
-    <div class="dash-card">
-      <div class="dash-icon" style="background: linear-gradient(135deg, #10b981, #14b8a6);">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-          <rect x="3" y="5" width="18" height="14" rx="2" stroke="white" stroke-width="2" />
-          <path d="M3 10h18M8 14h2" stroke="white" stroke-width="2" stroke-linecap="round" />
-        </svg>
+  <main class="scan-main">
+    <div class="scan-left">
+      <h1 class="scan-title">Scan Visitor QR</h1>
+      <p class="scan-sub">Point the camera at the visitor's QR pass.</p>
+
+      <div class="scan-viewport">
+        <video #video class="scan-video" [class.dim]="!!outcome" muted autoplay playsinline></video>
+        <div class="scan-reticle" *ngIf="scanning && !outcome"></div>
+
+        <!-- Result overlay -->
+        <div class="scan-result" *ngIf="outcome" [class.granted]="outcome.granted" [class.denied]="!outcome.granted">
+          <div class="scan-result-icon">{{ outcome.granted ? '✓' : '✕' }}</div>
+          <div class="scan-result-title">{{ outcome.title }}</div>
+          <div class="scan-result-detail">{{ outcome.detail }}</div>
+          <button class="scan-result-btn" (click)="clearOutcome()">Scan next</button>
+        </div>
+
+        <!-- Camera unavailable -->
+        <div class="scan-camera-error" *ngIf="cameraError && !scanning && !outcome">
+          <span>📷 {{ cameraError }}</span>
+          <button class="qr-retry" (click)="startScanner()">Enable camera</button>
+        </div>
+
+        <div class="scan-processing" *ngIf="processing">Validating…</div>
       </div>
-      <h1>Welcome, {{ user?.fullName }}</h1>
-      <p class="sub">You are signed in as a Security Guard.</p>
-      <div class="note">
-        📷 The web-based QR scanner and access-verification panel will appear here in
-        <strong>Phase 3</strong> (Secure Scanner & Validation).
+
+      <!-- Manual fallback / testing -->
+      <div class="scan-manual">
+        <label>Or paste a token to validate</label>
+        <div class="scan-manual-row">
+          <input type="text" [(ngModel)]="manualToken" name="manualToken" placeholder="VMS1...." class="scan-input" />
+          <button class="scan-validate-btn" (click)="submitManual()" [disabled]="processing">Validate</button>
+        </div>
       </div>
     </div>
+
+    <aside class="scan-right">
+      <h2 class="recent-title">Recent scans</h2>
+      <div class="recent-empty" *ngIf="recent.length === 0">No scans yet.</div>
+      <ul class="recent-list">
+        <li class="recent-item" *ngFor="let r of recent" [class.granted]="r.result === 'GRANTED'"
+          [class.denied]="r.result === 'DENIED'">
+          <div class="recent-dot"></div>
+          <div class="recent-body">
+            <div class="recent-name">{{ r.visitorName || 'Unknown' }}
+              <span class="recent-tag">{{ r.result }}</span>
+            </div>
+            <div class="recent-meta">{{ r.reason }} · {{ r.scannedAt | date: 'short' }}</div>
+          </div>
+        </li>
+      </ul>
+    </aside>
   </main>
 </div>

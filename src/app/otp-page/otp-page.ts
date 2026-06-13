@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChildren, QueryList, ElementRef } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { OtpPurpose } from '../core/models';
@@ -28,7 +28,8 @@ export class OtpPage implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private auth: AuthService
+    private auth: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -170,6 +171,11 @@ export class OtpPage implements OnInit, OnDestroy {
     }
   }
 
+  /** Track inputs by position so editing a digit never re-creates/reorders boxes. */
+  trackByIndex(index: number): number {
+    return index;
+  }
+
   isOtpComplete(): boolean {
     return this.otpDigits.every(digit => digit !== '');
   }
@@ -215,6 +221,7 @@ export class OtpPage implements OnInit, OnDestroy {
     this.hasError = true;
     this.errorMessage = err?.error?.message || 'Invalid verification code. Please try again.';
     this.otpDigits = ['', '', '', '', '', ''];
+    this.cdr.detectChanges();
     setTimeout(() => {
       const firstInput = this.otpInputs?.first?.nativeElement;
       if (firstInput) {
@@ -237,6 +244,7 @@ export class OtpPage implements OnInit, OnDestroy {
         this.hasError = false;
         this.errorMessage = '';
         this.startResendTimer();
+        this.cdr.detectChanges();
         setTimeout(() => {
           const firstInput = this.otpInputs?.first?.nativeElement;
           if (firstInput) {
@@ -248,6 +256,7 @@ export class OtpPage implements OnInit, OnDestroy {
         this.isResending = false;
         this.hasError = true;
         this.errorMessage = err?.error?.message || 'Could not resend the code. Please try again.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -265,6 +274,9 @@ export class OtpPage implements OnInit, OnDestroy {
       if (this.resendTimer <= 0) {
         clearInterval(this.timerInterval);
       }
+      // Drive change detection explicitly so the countdown updates every second
+      // even when the app runs without Zone.js (zoneless change detection).
+      this.cdr.detectChanges();
     }, 1000);
   }
 

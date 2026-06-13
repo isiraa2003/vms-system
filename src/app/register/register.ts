@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 
@@ -53,7 +53,7 @@ export class Register {
   errors: FormErrors = {};
   serverError = '';
 
-  constructor(private router: Router, private auth: AuthService) {}
+  constructor(private router: Router, private auth: AuthService, private cdr: ChangeDetectorRef) {}
 
   selectUserType(type: UserType): void {
     this.userType = type;
@@ -341,6 +341,7 @@ export class Register {
             this.errors.email = err.error.errors.email;
             this.currentStep = 1;
           }
+          this.cdr.detectChanges();
         }
       });
   }

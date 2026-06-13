@@ -10,21 +10,80 @@
     </div>
   </header>
 
-  <main class="dash-main">
-    <div class="dash-card">
-      <div class="dash-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L3 6v6c0 5.5 3.8 10.3 9 11 5.2-.7 9-5.5 9-11V6l-9-4Z" stroke="white" stroke-width="2"
-            stroke-linejoin="round" />
-          <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </div>
-      <h1>Welcome, {{ user?.fullName }}</h1>
-      <p class="sub">You are signed in as an Administrator.</p>
-      <div class="note">
-        👥 User management and the immutable access-log viewer will appear here in
-        <strong>Phase 4</strong> (Admin Dashboard &amp; Logging).
-      </div>
+  <main class="admin-main">
+    <h1 class="admin-title">Admin Dashboard</h1>
+
+    <!-- Stat cards -->
+    <div class="stat-grid" *ngIf="stats">
+      <div class="stat-card"><div class="stat-num">{{ stats.totalUsers }}</div><div class="stat-label">Total users</div></div>
+      <div class="stat-card"><div class="stat-num">{{ stats.visitors }}</div><div class="stat-label">Visitors</div></div>
+      <div class="stat-card"><div class="stat-num">{{ stats.guards }}</div><div class="stat-label">Guards</div></div>
+      <div class="stat-card granted"><div class="stat-num">{{ stats.grantedToday }}</div><div class="stat-label">Granted (24h)</div></div>
+      <div class="stat-card denied"><div class="stat-num">{{ stats.deniedToday }}</div><div class="stat-label">Denied (24h)</div></div>
+    </div>
+
+    <div class="server-error" *ngIf="error">{{ error }}</div>
+
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <button class="admin-tab" [class.active]="tab === 'users'" (click)="selectTab('users')">Users</button>
+      <button class="admin-tab" [class.active]="tab === 'logs'" (click)="selectTab('logs')">Access Logs</button>
+    </div>
+
+    <!-- Users -->
+    <div class="admin-panel" *ngIf="tab === 'users'">
+      <div class="muted" *ngIf="loadingUsers">Loading users…</div>
+      <table class="admin-table" *ngIf="!loadingUsers">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of users">
+            <td>{{ u.fullName }} <span class="self-tag" *ngIf="isSelf(u)">you</span></td>
+            <td class="muted">{{ u.email }}</td>
+            <td>
+              <select [value]="u.role" (change)="changeRole(u, $any($event.target).value)" [disabled]="isSelf(u)">
+                <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+              </select>
+            </td>
+            <td>
+              <span class="status-pill" [class.on]="u.enabled" [class.off]="!u.enabled">
+                {{ u.enabled ? 'Active' : 'Disabled' }}
+              </span>
+            </td>
+            <td>
+              <button class="row-btn" (click)="toggleEnabled(u)" [disabled]="isSelf(u)">
+                {{ u.enabled ? 'Disable' : 'Enable' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Access logs -->
+    <div class="admin-panel" *ngIf="tab === 'logs'">
+      <div class="muted" *ngIf="loadingLogs">Loading logs…</div>
+      <div class="muted" *ngIf="!loadingLogs && logs.length === 0">No access logs yet.</div>
+      <table class="admin-table" *ngIf="!loadingLogs && logs.length > 0">
+        <thead>
+          <tr><th>Visitor</th><th>Role</th><th>Guard</th><th>Result</th><th>Reason</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of logs">
+            <td>{{ l.visitorName || '—' }}</td>
+            <td class="muted">{{ l.visitorRole || '—' }}</td>
+            <td class="muted">{{ l.guardName || '—' }}</td>
+            <td>
+              <span class="status-pill" [class.on]="l.result === 'GRANTED'" [class.off]="l.result === 'DENIED'">
+                {{ l.result }}
+              </span>
+            </td>
+            <td class="muted">{{ l.reason }}</td>
+            <td class="muted">{{ l.scannedAt | date: 'short' }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </main>
 </div>

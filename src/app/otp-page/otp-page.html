@@ -41,7 +41,7 @@
       <!-- OTP Input Boxes -->
       <div class="otp-inputs">
         <input
-          *ngFor="let digit of otpDigits; let i = index"
+          *ngFor="let digit of otpDigits; let i = index; trackBy: trackByIndex"
           #otpInput
           type="text"
           maxlength="1"

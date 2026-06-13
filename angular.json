@@ -46,7 +46,13 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "qrcode"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -62,8 +68,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1.2MB",
+                  "maximumError": "2MB"
                 },
                 {
                   "type": "anyComponentStyle",
