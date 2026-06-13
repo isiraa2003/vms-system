@@ -1,0 +1,30 @@
+<div class="dash">
+  <header class="dash-topbar">
+    <div class="dash-brand"><span class="dot">V</span> VMS</div>
+    <div class="dash-user">
+      <span>{{ user?.fullName }}</span>
+      <span class="dash-role-badge">Administrator</span>
+      <button class="dash-logout" (click)="logout()" [disabled]="loggingOut">
+        {{ loggingOut ? 'Signing out…' : 'Log out' }}
+      </button>
+    </div>
+  </header>
+
+  <main class="dash-main">
+    <div class="dash-card">
+      <div class="dash-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L3 6v6c0 5.5 3.8 10.3 9 11 5.2-.7 9-5.5 9-11V6l-9-4Z" stroke="white" stroke-width="2"
+            stroke-linejoin="round" />
+          <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <h1>Welcome, {{ user?.fullName }}</h1>
+      <p class="sub">You are signed in as an Administrator.</p>
+      <div class="note">
+        👥 User management and the immutable access-log viewer will appear here in
+        <strong>Phase 4</strong> (Admin Dashboard &amp; Logging).
+      </div>
+    </div>
+  </main>
+</div>

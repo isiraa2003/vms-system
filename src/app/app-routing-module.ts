@@ -4,28 +4,32 @@ import { LandingComponent } from './landing/landing.component';
 import { LoginComponent } from './login/login.component';
 import { Register } from './register/register';
 import { OtpPage } from './otp-page/otp-page';
+import { VisitorDashboardComponent } from './dashboards/visitor-dashboard.component';
+import { GuardDashboardComponent } from './dashboards/guard-dashboard.component';
+import { AdminDashboardComponent } from './dashboards/admin-dashboard.component';
+import { authGuard, roleGuard } from './core/auth.guard';
 
 const routes: Routes = [
+  { path: '', component: LandingComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: Register },
+  { path: 'verify-otp', component: OtpPage },
   {
-    path: '',
-    component: LandingComponent
+    path: 'visitor',
+    component: VisitorDashboardComponent,
+    canActivate: [authGuard, roleGuard('VISITOR')]
   },
   {
-    path: 'login',
-    component: LoginComponent
+    path: 'guard',
+    component: GuardDashboardComponent,
+    canActivate: [authGuard, roleGuard('GUARD')]
   },
   {
-    path: 'register',
-    component: Register
+    path: 'admin',
+    component: AdminDashboardComponent,
+    canActivate: [authGuard, roleGuard('ADMIN')]
   },
-  {
-    path: 'verify-otp',
-    component: OtpPage
-  },
-  {
-    path: '**',
-    redirectTo: ''
-  }
+  { path: '**', redirectTo: '' }
 ];
 
 @NgModule({

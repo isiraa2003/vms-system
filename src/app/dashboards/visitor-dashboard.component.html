@@ -1,0 +1,31 @@
+<div class="dash">
+  <header class="dash-topbar">
+    <div class="dash-brand"><span class="dot">V</span> VMS</div>
+    <div class="dash-user">
+      <span>{{ user?.fullName }}</span>
+      <span class="dash-role-badge">Visitor</span>
+      <button class="dash-logout" (click)="logout()" [disabled]="loggingOut">
+        {{ loggingOut ? 'Signing out…' : 'Log out' }}
+      </button>
+    </div>
+  </header>
+
+  <main class="dash-main">
+    <div class="dash-card">
+      <div class="dash-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="7" height="7" rx="1" stroke="white" stroke-width="2" />
+          <rect x="14" y="3" width="7" height="7" rx="1" stroke="white" stroke-width="2" />
+          <rect x="3" y="14" width="7" height="7" rx="1" stroke="white" stroke-width="2" />
+          <path d="M14 14h3v3h-3zM18 18h3v3h-3z" stroke="white" stroke-width="2" />
+        </svg>
+      </div>
+      <h1>Welcome, {{ user?.fullName }}</h1>
+      <p class="sub">You are signed in as a Visitor.</p>
+      <div class="note">
+        🔐 Your secure, auto-refreshing QR access pass will appear here in
+        <strong>Phase 2</strong> (Dynamic Secure QR Generation).
+      </div>
+    </div>
+  </main>
+</div>

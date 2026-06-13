@@ -15,10 +15,10 @@
     </div>
 
     <div class="hero-content">
-      <h2 class="hero-title">Join the<br>Smart Campus</h2>
+      <h2 class="hero-title">Join the<br>VMS Platform</h2>
       <p class="hero-description">
-        Register once, get your permanent digital gate pass.<br>
-        Fast, secure, and hassle-free campus access.
+        Register once, get your secure digital QR pass.<br>
+        Fast, encrypted, and verified access.
       </p>
 
       <div class="features-list">
@@ -53,7 +53,7 @@
     </div>
 
     <footer class="left-footer">
-      <p>© 2026 CINEC Campus - Visitor Management System</p>
+      <p>© 2026 Visitor Management System - Secure QR Access</p>
     </footer>
   </div>
 
@@ -62,7 +62,7 @@
     <div class="register-form-wrapper">
       <div class="form-header">
         <h2 class="form-title">Create Account</h2>
-        <p class="form-subtitle">Register to get your digital gate pass</p>
+        <p class="form-subtitle">Register to get your secure QR pass</p>
       </div>
 
       <!-- Progress Indicator -->
@@ -73,6 +73,8 @@
         <span class="progress-text">Step {{ currentStep }}/{{ totalSteps }}</span>
       </div>
 
+      <div class="server-error" *ngIf="serverError">{{ serverError }}</div>
+
       <!-- Step 1: Basic Information -->
       <form *ngIf="currentStep === 1" class="register-form">
         <!-- User Type Tabs -->
@@ -80,16 +82,16 @@
           <button
             type="button"
             class="tab-button"
-            [class.active]="userType === 'student'"
-            (click)="selectUserType('student')">
-            Student
+            [class.active]="userType === 'visitor'"
+            (click)="selectUserType('visitor')">
+            Visitor
           </button>
           <button
             type="button"
             class="tab-button"
-            [class.active]="userType === 'staff'"
-            (click)="selectUserType('staff')">
-            Lecturer / Staff
+            [class.active]="userType === 'guard'"
+            (click)="selectUserType('guard')">
+            Security Guard
           </button>
         </div>
 
@@ -116,7 +118,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Institutional Email</label>
+          <label class="form-label">Email Address</label>
           <div class="input-wrapper">
             <span class="input-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -129,7 +131,7 @@
               type="email"
               [(ngModel)]="formData.email"
               name="email"
-              placeholder="you@cinec.edu"
+              placeholder="you@example.com"
               class="form-input"
               [class.error]="errors.email"
               (blur)="validateField('email')">
@@ -159,7 +161,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ userType === 'student' ? 'Student ID' : 'Staff ID' }}</label>
+          <label class="form-label">ID / NIC Number</label>
           <div class="input-wrapper">
             <span class="input-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -171,7 +173,7 @@
               type="text"
               [(ngModel)]="formData.idNumber"
               name="idNumber"
-              placeholder="{{ userType === 'student' ? 'F20031212002' : 'S20031212002' }}"
+              placeholder="Your ID or NIC number"
               class="form-input"
               [class.error]="errors.idNumber"
               (blur)="validateField('idNumber')">

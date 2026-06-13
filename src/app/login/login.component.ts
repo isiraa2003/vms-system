@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../core/auth.service';
 
-type UserType = 'student-staff' | 'security' | 'admin' | 'visitor';
+type UserType = 'visitor' | 'security' | 'admin';
 
 @Component({
   selector: 'app-login',
@@ -10,7 +11,7 @@ type UserType = 'student-staff' | 'security' | 'admin' | 'visitor';
   standalone: false
 })
 export class LoginComponent implements OnInit {
-  activeTab: UserType = 'student-staff';
+  activeTab: UserType = 'visitor';
   email = '';
   password = '';
   rememberMe = false;
@@ -20,10 +21,13 @@ export class LoginComponent implements OnInit {
   // Form validation errors
   emailError = '';
   passwordError = '';
+  serverError = '';
+  successMessage = '';
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private auth: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -31,24 +35,17 @@ export class LoginComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['type']) {
         this.activeTab = params['type'] as UserType;
-        this.updateEmailPlaceholder();
       }
     });
-  }
 
-  updateEmailPlaceholder(): void {
-    if (this.activeTab === 'student-staff') {
-      this.email = 'you@cinec.edu';
-    } else if (this.activeTab === 'security') {
-      this.email = 'admin@vms.com';
-    } else {
-      this.email = '';
+    // Show a confirmation if we arrived here just after verifying registration.
+    if (history.state?.verified) {
+      this.successMessage = 'Email verified! Your account is active — please sign in.';
     }
   }
 
   selectTab(tab: UserType): void {
     this.activeTab = tab;
-    this.updateEmailPlaceholder();
     this.clearErrors();
   }
 
@@ -75,11 +72,6 @@ export class LoginComponent implements OnInit {
       return false;
     }
 
-    if (this.activeTab === 'student-staff' && !this.email.endsWith('@cinec.edu')) {
-      this.emailError = 'Please use your @cinec.edu email';
-      return false;
-    }
-
     return true;
   }
 
@@ -100,27 +92,28 @@ export class LoginComponent implements OnInit {
   }
 
   onSubmit(): void {
+    this.serverError = '';
     const isEmailValid = this.validateEmail();
     const isPasswordValid = this.validatePassword();
 
-    if (isEmailValid && isPasswordValid) {
-      this.isLoading = true;
-
-      // Simulate API call
-      setTimeout(() => {
-        console.log('Login attempt:', {
-          type: this.activeTab,
-          email: this.email,
-          password: this.password,
-          rememberMe: this.rememberMe
-        });
-
-        this.isLoading = false;
-        alert('Login successful! (Add your authentication logic here)');
-        // Navigate to dashboard
-        // this.router.navigate(['/dashboard']);
-      }, 1500);
+    if (!isEmailValid || !isPasswordValid) {
+      return;
     }
+
+    this.isLoading = true;
+    this.auth.login({ email: this.email, password: this.password }).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        // Step 2: verify the login OTP (2FA).
+        this.router.navigate(['/verify-otp'], {
+          state: { email: res.email, purpose: 'LOGIN' }
+        });
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.serverError = err?.error?.message || 'Login failed. Please try again.';
+      }
+    });
   }
 
   forgotPassword(): void {
@@ -131,22 +124,11 @@ export class LoginComponent implements OnInit {
     this.router.navigate(['/register']);
   }
 
-  visitorCheckIn(): void {
-    this.router.navigate(['/login'], { queryParams: { type: 'visitor' } });
-  }
-
   getEmailPlaceholder(): string {
-    switch (this.activeTab) {
-      case 'student-staff':
-        return 'you@cinec.edu';
-      case 'security':
-        return 'admin@vms.com';
-      default:
-        return 'Enter your email';
-    }
+    return 'you@example.com';
   }
 
   getEmailLabel(): string {
-    return this.activeTab === 'student-staff' ? 'Institutional Email' : 'Email Address';
+    return 'Email Address';
   }
 }

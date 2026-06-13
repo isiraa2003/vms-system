@@ -14,9 +14,9 @@
     </div>
 
     <div class="hero-content">
-      <h2 class="hero-title">Secure Campus<br>Access Control</h2>
+      <h2 class="hero-title">Secure Visitor<br>Access Control</h2>
       <p class="hero-description">
-        A modern automated system for managing student, staff, and visitor attendance with QR code-based gate passes.
+        A modern visitor management system with cryptographically signed, time-bound QR passes and real-time access logging.
       </p>
 
       <div class="stats-container">
@@ -36,7 +36,7 @@
     </div>
 
     <footer class="left-footer">
-      <p>© 2026 CINEC Campus - Visitor Management System</p>
+      <p>© 2026 Visitor Management System - Secure QR Access</p>
     </footer>
   </div>
 
@@ -44,21 +44,24 @@
     <div class="login-form-wrapper">
       <div class="form-header">
         <h2 class="form-title">Welcome Back</h2>
-        <p class="form-subtitle">Sign in to access the campus management system</p>
+        <p class="form-subtitle">Sign in to access the visitor management system</p>
       </div>
+
+      <div class="server-success" *ngIf="successMessage">{{ successMessage }}</div>
+      <div class="server-error" *ngIf="serverError">{{ serverError }}</div>
 
       <div class="tabs-container">
         <button
           class="tab-button"
-          [class.active]="activeTab === 'student-staff'"
-          (click)="selectTab('student-staff')">
-          Student / Staff
+          [class.active]="activeTab === 'visitor'"
+          (click)="selectTab('visitor')">
+          Visitor
         </button>
         <button
           class="tab-button"
           [class.active]="activeTab === 'security'"
           (click)="selectTab('security')">
-          Security
+          Security Guard
         </button>
         <button
           class="tab-button"
@@ -154,24 +157,17 @@
           </svg>
         </button>
 
-        <div class="divider" *ngIf="activeTab === 'student-staff'">
-          <span>New to VMS?</span>
+        <div class="divider" *ngIf="activeTab !== 'admin'">
+          <span>New here?</span>
         </div>
 
         <button
           type="button"
           class="secondary-button"
-          *ngIf="activeTab === 'student-staff'"
+          *ngIf="activeTab !== 'admin'"
           (click)="createAccount()">
           Create an Account
         </button>
-
-        <div class="visitor-link">
-          <span>Are you a visitor?</span>
-          <button type="button" class="link-button" (click)="visitorCheckIn()">
-            Check in here →
-          </button>
-        </div>
       </form>
     </div>
   </div>

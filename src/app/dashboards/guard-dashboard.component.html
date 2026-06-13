@@ -1,0 +1,29 @@
+<div class="dash">
+  <header class="dash-topbar">
+    <div class="dash-brand"><span class="dot">V</span> VMS</div>
+    <div class="dash-user">
+      <span>{{ user?.fullName }}</span>
+      <span class="dash-role-badge">Security Guard</span>
+      <button class="dash-logout" (click)="logout()" [disabled]="loggingOut">
+        {{ loggingOut ? 'Signing out…' : 'Log out' }}
+      </button>
+    </div>
+  </header>
+
+  <main class="dash-main">
+    <div class="dash-card">
+      <div class="dash-icon" style="background: linear-gradient(135deg, #10b981, #14b8a6);">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="5" width="18" height="14" rx="2" stroke="white" stroke-width="2" />
+          <path d="M3 10h18M8 14h2" stroke="white" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </div>
+      <h1>Welcome, {{ user?.fullName }}</h1>
+      <p class="sub">You are signed in as a Security Guard.</p>
+      <div class="note">
+        📷 The web-based QR scanner and access-verification panel will appear here in
+        <strong>Phase 3</strong> (Secure Scanner & Validation).
+      </div>
+    </div>
+  </main>
+</div>

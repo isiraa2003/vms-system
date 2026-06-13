@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../core/auth.service';
 
-type UserType = 'student' | 'staff';
+type UserType = 'visitor' | 'guard';
 type PasswordStrength = 'weak' | 'medium' | 'strong';
 
 interface RegistrationForm {
@@ -33,7 +34,7 @@ interface FormErrors {
 export class Register {
   currentStep = 1;
   totalSteps = 2;
-  userType: UserType = 'student';
+  userType: UserType = 'visitor';
   isLoading = false;
   showPassword = false;
   showConfirmPassword = false;
@@ -50,17 +51,12 @@ export class Register {
   };
 
   errors: FormErrors = {};
+  serverError = '';
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private auth: AuthService) {}
 
   selectUserType(type: UserType): void {
     this.userType = type;
-    // Update email placeholder when user type changes
-    if (type === 'student') {
-      this.formData.email = this.formData.email.replace(/@staff\.cinec\.edu$/, '@cinec.edu');
-    } else {
-      this.formData.email = this.formData.email.replace(/@cinec\.edu$/, '@staff.cinec.edu');
-    }
   }
 
   togglePasswordVisibility(): void {
@@ -128,13 +124,6 @@ export class Register {
       return false;
     }
 
-    // Check institutional email
-    const expectedDomain = this.userType === 'student' ? '@cinec.edu' : '@staff.cinec.edu';
-    if (!this.formData.email.endsWith(expectedDomain)) {
-      this.errors.email = `Please use your institutional email (${expectedDomain})`;
-      return false;
-    }
-
     return true;
   }
 
@@ -163,16 +152,14 @@ export class Register {
     delete this.errors.idNumber;
 
     if (!this.formData.idNumber) {
-      this.errors.idNumber = `${this.userType === 'student' ? 'Student' : 'Staff'} ID is required`;
+      this.errors.idNumber = 'ID / NIC number is required';
       return false;
     }
 
-    // Check ID format (example: F20031212002 for student, S20031212002 for staff)
-    const expectedPrefix = this.userType === 'student' ? 'F' : 'S';
-    const idPattern = new RegExp(`^${expectedPrefix}[0-9]{11}$`);
-
-    if (!idPattern.test(this.formData.idNumber)) {
-      this.errors.idNumber = `Please enter a valid ${this.userType} ID (e.g., ${expectedPrefix}20031212002)`;
+    // Generic identity document: 5-20 alphanumeric characters
+    const idPattern = /^[A-Za-z0-9]{5,20}$/;
+    if (!idPattern.test(this.formData.idNumber.trim())) {
+      this.errors.idNumber = 'Enter a valid ID / NIC number (5-20 letters or digits)';
       return false;
     }
 
@@ -323,35 +310,39 @@ export class Register {
   }
 
   submitRegistration(): void {
-    if (this.validateStep2()) {
-      this.isLoading = true;
-
-      // Simulate API call
-      setTimeout(() => {
-        console.log('Registration data:', {
-          userType: this.userType,
-          ...this.formData,
-          password: '***hidden***',
-          confirmPassword: '***hidden***'
-        });
-
-        this.isLoading = false;
-
-        // Navigate to OTP verification page with email and registration data
-        this.router.navigate(['/verify-otp'], {
-          state: {
-            email: this.formData.email,
-            registrationData: {
-              userType: this.userType,
-              fullName: this.formData.fullName,
-              email: this.formData.email,
-              phone: this.formData.phone,
-              idNumber: this.formData.idNumber
-            }
-          }
-        });
-      }, 2000);
+    this.serverError = '';
+    if (!this.validateStep2()) {
+      return;
     }
+
+    this.isLoading = true;
+    this.auth
+      .register({
+        fullName: this.formData.fullName,
+        email: this.formData.email,
+        phone: this.formData.phone,
+        idNumber: this.formData.idNumber,
+        password: this.formData.password,
+        role: this.userType === 'guard' ? 'GUARD' : 'VISITOR'
+      })
+      .subscribe({
+        next: (res) => {
+          this.isLoading = false;
+          // Move to OTP verification (registration email verification).
+          this.router.navigate(['/verify-otp'], {
+            state: { email: res.email, purpose: 'REGISTRATION' }
+          });
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.serverError = err?.error?.message || 'Registration failed. Please try again.';
+          // If a field-specific error came back, surface it on step 1.
+          if (err?.error?.errors?.email) {
+            this.errors.email = err.error.errors.email;
+            this.currentStep = 1;
+          }
+        }
+      });
   }
 
   goToLogin(): void {

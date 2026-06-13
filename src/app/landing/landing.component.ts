@@ -11,15 +11,15 @@ export class LandingComponent {
 
   constructor(private router: Router) {}
 
-  navigateToStudentStaff(): void {
-    this.router.navigate(['/login'], { queryParams: { type: 'student-staff' } });
-  }
-
-  navigateToVisitorCheckIn(): void {
+  navigateToVisitor(): void {
     this.router.navigate(['/login'], { queryParams: { type: 'visitor' } });
   }
 
-  navigateToSecurityPortal(): void {
+  navigateToSecurity(): void {
     this.router.navigate(['/login'], { queryParams: { type: 'security' } });
+  }
+
+  navigateToAdmin(): void {
+    this.router.navigate(['/login'], { queryParams: { type: 'admin' } });
   }
 }

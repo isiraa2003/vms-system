@@ -1,5 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { AuthService } from '../core/auth.service';
+import { OtpPurpose } from '../core/models';
 
 @Component({
   selector: 'app-otp-page',
@@ -20,30 +22,27 @@ export class OtpPage implements OnInit, OnDestroy {
   resendTimer = 0;
   private timerInterval: any;
 
-  // Registration data passed from register page
-  registrationData: any = null;
+  // Why we're verifying: registration email-verification or login 2FA.
+  purpose: OtpPurpose = 'REGISTRATION';
 
   constructor(
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private auth: AuthService
   ) {}
 
   ngOnInit(): void {
-    // Get email from navigation state
+    // Get email + purpose from navigation state (set by login/register).
     const navigation = this.router.getCurrentNavigation();
-    if (navigation?.extras.state) {
-      this.email = navigation.extras.state['email'];
-      this.registrationData = navigation.extras.state['registrationData'];
-    } else {
-      // Try to get from query params as fallback
-      this.route.queryParams.subscribe(params => {
-        this.email = params['email'] || '';
-      });
+    const state = navigation?.extras.state ?? history.state;
+    if (state) {
+      this.email = state['email'] || '';
+      this.purpose = (state['purpose'] as OtpPurpose) || 'REGISTRATION';
     }
 
     if (!this.email) {
-      // If no email, redirect back to register
-      this.router.navigate(['/register']);
+      // No context — send the user back to log in.
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -190,35 +189,38 @@ export class OtpPage implements OnInit, OnDestroy {
 
     const otpCode = this.getOtpCode();
 
-    // Simulate API call to verify OTP
+    if (this.purpose === 'LOGIN') {
+      this.auth.verifyLogin(this.email, otpCode).subscribe({
+        next: (res) => {
+          this.isVerifying = false;
+          this.router.navigate([this.auth.dashboardRoute(res.user.role)]);
+        },
+        error: (err) => this.onVerifyError(err)
+      });
+    } else {
+      this.auth.verifyRegistration(this.email, otpCode).subscribe({
+        next: () => {
+          this.isVerifying = false;
+          this.router.navigate(['/login'], {
+            state: { verified: true }
+          });
+        },
+        error: (err) => this.onVerifyError(err)
+      });
+    }
+  }
+
+  private onVerifyError(err: any): void {
+    this.isVerifying = false;
+    this.hasError = true;
+    this.errorMessage = err?.error?.message || 'Invalid verification code. Please try again.';
+    this.otpDigits = ['', '', '', '', '', ''];
     setTimeout(() => {
-      // For demo purposes, accept "123456" as valid OTP
-      if (otpCode === '123456') {
-        this.isVerifying = false;
-
-        // Show success message
-        alert('Email verified successfully! Your account has been created.');
-
-        // Navigate to login page
-        this.router.navigate(['/login']);
-      } else {
-        // Invalid OTP
-        this.isVerifying = false;
-        this.hasError = true;
-        this.errorMessage = 'Invalid verification code. Please try again.';
-
-        // Clear OTP inputs
-        this.otpDigits = ['', '', '', '', '', ''];
-
-        // Focus first input
-        setTimeout(() => {
-          const firstInput = this.otpInputs?.first?.nativeElement;
-          if (firstInput) {
-            firstInput.focus();
-          }
-        }, 100);
+      const firstInput = this.otpInputs?.first?.nativeElement;
+      if (firstInput) {
+        firstInput.focus();
       }
-    }, 2000);
+    }, 100);
   }
 
   resendOTP(): void {
@@ -228,29 +230,26 @@ export class OtpPage implements OnInit, OnDestroy {
 
     this.isResending = true;
 
-    // Simulate API call to resend OTP
-    setTimeout(() => {
-      this.isResending = false;
-
-      // Clear previous OTP and errors
-      this.otpDigits = ['', '', '', '', '', ''];
-      this.hasError = false;
-      this.errorMessage = '';
-
-      // Show success message
-      alert(`Verification code has been resent to ${this.email}`);
-
-      // Restart timer
-      this.startResendTimer();
-
-      // Focus first input
-      setTimeout(() => {
-        const firstInput = this.otpInputs?.first?.nativeElement;
-        if (firstInput) {
-          firstInput.focus();
-        }
-      }, 100);
-    }, 1500);
+    this.auth.resendOtp(this.email, this.purpose).subscribe({
+      next: () => {
+        this.isResending = false;
+        this.otpDigits = ['', '', '', '', '', ''];
+        this.hasError = false;
+        this.errorMessage = '';
+        this.startResendTimer();
+        setTimeout(() => {
+          const firstInput = this.otpInputs?.first?.nativeElement;
+          if (firstInput) {
+            firstInput.focus();
+          }
+        }, 100);
+      },
+      error: (err) => {
+        this.isResending = false;
+        this.hasError = true;
+        this.errorMessage = err?.error?.message || 'Could not resend the code. Please try again.';
+      }
+    });
   }
 
   startResendTimer(): void {
@@ -270,6 +269,6 @@ export class OtpPage implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/register']);
+    this.router.navigate([this.purpose === 'LOGIN' ? '/login' : '/register']);
   }
 }
