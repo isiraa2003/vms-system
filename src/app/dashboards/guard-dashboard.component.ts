@@ -162,8 +162,9 @@ export class GuardDashboardComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private handle(rawText: string): void {
+  private handle(rawInput: string): void {
     this.outcome = null;
+    const rawText = (rawInput || '').trim();
 
     // Scanner-side structural validation (quishing / injection defense).
     const block = this.structuralBlockReason(rawText);
@@ -196,12 +197,20 @@ export class GuardDashboardComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * A legitimate pass is EXACTLY "VMS1." + base64url (which may itself contain
+   * '-', '_', or '--'). If it matches that shape we accept it outright — we must
+   * NOT scan a real encrypted token for "injection" characters, or random
+   * base64 (e.g. a "--") would be falsely blocked. Anything that is NOT this
+   * shape (plain URLs, raw text, scripts) is dropped here before any network call.
+   */
+  private readonly vmsToken = new RegExp('^' + QR_PREFIX.replace(/\./g, '\\.') + '[A-Za-z0-9_-]+$');
+
   private structuralBlockReason(text: string): string | null {
     if (!text) return 'Empty code.';
-    if (/^\s*(https?:\/\/|www\.)/i.test(text)) return 'This QR opens a web link — possible phishing. Not a VMS pass.';
-    if (/[<>"';]|--|\bunion\b|\bselect\b|<script/i.test(text)) return 'This QR contains unsafe characters — rejected.';
-    if (!text.startsWith(QR_PREFIX)) return 'Not a VMS access pass (unrecognised / unencrypted format).';
-    return null;
+    if (this.vmsToken.test(text)) return null; // valid VMS format → allow
+    if (/^(https?:\/\/|www\.)/i.test(text)) return 'This QR opens a web link — possible phishing. Not a VMS pass.';
+    return 'Not a VMS access pass (unrecognised / unencrypted format).';
   }
 
   loadRecent(): void {

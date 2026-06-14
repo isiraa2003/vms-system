@@ -189,8 +189,14 @@ body {
 .qr-state { display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--ink-2); font-size: 14px; padding: 20px; }
 .qr-err { color: var(--danger); }
 .qr-timer { margin: 18px auto 4px; max-width: 280px; }
+.qr-countdown { display: flex; align-items: baseline; justify-content: center; gap: 2px; margin-bottom: 10px; }
+.qr-countdown .cd-num { font-size: 40px; font-weight: 800; color: var(--brand); letter-spacing: -0.02em; line-height: 1; transition: color 0.2s; }
+.qr-countdown .cd-unit { font-size: 18px; font-weight: 700; color: var(--brand); }
+.qr-countdown.low .cd-num, .qr-countdown.low .cd-unit { color: var(--danger); animation: cdpulse 1s ease-in-out infinite; }
+@keyframes cdpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 .qr-bar { height: 8px; background: #eef2f7; border-radius: 999px; overflow: hidden; }
 .qr-bar-fill { height: 100%; background: var(--brand-grad); border-radius: 999px; transition: width 1s linear; }
+.qr-bar-fill.low { background: linear-gradient(90deg, #f87171, #dc2626); }
 .qr-count { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
 .qr-count strong { color: var(--brand); }
 .qr-badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 16px 0 6px; }

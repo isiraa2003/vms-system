@@ -37,8 +37,11 @@
         </div>
 
         <div class="qr-timer" *ngIf="qrDataUrl && !error">
-          <div class="qr-bar"><div class="qr-bar-fill" [style.width.%]="progress"></div></div>
-          <p class="qr-count">Refreshes in <strong>{{ countdown }}s</strong></p>
+          <div class="qr-countdown" [class.low]="countdown <= 5">
+            <span class="cd-num">{{ countdown }}</span><span class="cd-unit">s</span>
+          </div>
+          <div class="qr-bar"><div class="qr-bar-fill" [class.low]="countdown <= 5" [style.width.%]="progress"></div></div>
+          <p class="qr-count">A new secure code is generated automatically</p>
         </div>
 
         <div class="qr-badges">

@@ -55,6 +55,9 @@ export class VisitorDashboardComponent implements OnInit, OnDestroy {
     if (this.countdown <= 0) {
       this.refreshQr();
       this.loadHistory();
+    } else {
+      // Update the countdown live every second (works with or without Zone.js).
+      this.cdr.detectChanges();
     }
   }
 
