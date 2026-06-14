@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { AdminService } from '../core/admin.service';
-import { AccessLogRow, AdminStats, AdminUser, AppUser, Role } from '../core/models';
+import { AccessLogRow, AdminStats, AdminUser, AppUser, PresentVisitor, Role } from '../core/models';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -13,11 +13,13 @@ export class AdminDashboardComponent implements OnInit {
   user: AppUser | null;
   loggingOut = false;
 
-  tab: 'users' | 'logs' = 'users';
+  tab: 'present' | 'users' | 'logs' = 'present';
   stats: AdminStats | null = null;
+  present: PresentVisitor[] = [];
   users: AdminUser[] = [];
   logs: AccessLogRow[] = [];
-  loadingUsers = true;
+  loadingPresent = true;
+  loadingUsers = false;
   loadingLogs = false;
   error = '';
   readonly roles: Role[] = ['VISITOR', 'GUARD', 'ADMIN'];
@@ -33,82 +35,59 @@ export class AdminDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadStats();
-    this.loadUsers();
+    this.loadPresent();
   }
 
-  selectTab(tab: 'users' | 'logs'): void {
+  selectTab(tab: 'present' | 'users' | 'logs'): void {
     this.tab = tab;
-    if (tab === 'logs' && this.logs.length === 0) {
-      this.loadLogs();
-    }
+    if (tab === 'present') this.loadPresent();
+    if (tab === 'users' && this.users.length === 0) this.loadUsers();
+    if (tab === 'logs') this.loadLogs();
   }
 
   loadStats(): void {
     this.admin.getStats().subscribe({
-      next: (s) => {
-        this.stats = s;
-        this.cdr.detectChanges();
-      },
+      next: (s) => { this.stats = s; this.cdr.detectChanges(); },
       error: () => {},
+    });
+  }
+
+  loadPresent(): void {
+    this.loadingPresent = true;
+    this.admin.getPresent().subscribe({
+      next: (p) => { this.present = p; this.loadingPresent = false; this.cdr.detectChanges(); },
+      error: () => { this.loadingPresent = false; this.cdr.detectChanges(); },
     });
   }
 
   loadUsers(): void {
     this.loadingUsers = true;
     this.admin.getUsers().subscribe({
-      next: (u) => {
-        this.users = u;
-        this.loadingUsers = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.loadingUsers = false;
-        this.error = err?.error?.message || 'Failed to load users.';
-        this.cdr.detectChanges();
-      },
+      next: (u) => { this.users = u; this.loadingUsers = false; this.cdr.detectChanges(); },
+      error: (err) => { this.loadingUsers = false; this.error = err?.error?.message || 'Failed to load users.'; this.cdr.detectChanges(); },
     });
   }
 
   loadLogs(): void {
     this.loadingLogs = true;
     this.admin.getLogs().subscribe({
-      next: (l) => {
-        this.logs = l;
-        this.loadingLogs = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.loadingLogs = false;
-        this.cdr.detectChanges();
-      },
+      next: (l) => { this.logs = l; this.loadingLogs = false; this.cdr.detectChanges(); },
+      error: () => { this.loadingLogs = false; this.cdr.detectChanges(); },
     });
   }
 
   toggleEnabled(u: AdminUser): void {
     this.admin.setEnabled(u.id, !u.enabled).subscribe({
-      next: (updated) => {
-        u.enabled = updated.enabled;
-        this.loadStats();
-        this.cdr.detectChanges();
-      },
+      next: (updated) => { u.enabled = updated.enabled; this.loadStats(); this.cdr.detectChanges(); },
       error: (err) => this.flash(err),
     });
   }
 
   changeRole(u: AdminUser, role: Role): void {
-    if (role === u.role) {
-      return;
-    }
+    if (role === u.role) return;
     this.admin.setRole(u.id, role).subscribe({
-      next: (updated) => {
-        u.role = updated.role;
-        this.loadStats();
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.flash(err);
-        this.loadUsers(); // revert the dropdown to the server's truth
-      },
+      next: (updated) => { u.role = updated.role; this.loadStats(); this.cdr.detectChanges(); },
+      error: (err) => { this.flash(err); this.loadUsers(); },
     });
   }
 
@@ -119,10 +98,7 @@ export class AdminDashboardComponent implements OnInit {
   private flash(err: any): void {
     this.error = err?.error?.message || 'Action failed.';
     this.cdr.detectChanges();
-    setTimeout(() => {
-      this.error = '';
-      this.cdr.detectChanges();
-    }, 4000);
+    setTimeout(() => { this.error = ''; this.cdr.detectChanges(); }, 4000);
   }
 
   logout(): void {

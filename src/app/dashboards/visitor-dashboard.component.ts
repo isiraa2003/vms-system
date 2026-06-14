@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import * as QRCode from 'qrcode';
 import { AuthService } from '../core/auth.service';
 import { QrService } from '../core/qr.service';
-import { AppUser } from '../core/models';
+import { AppUser, VisitorHistory } from '../core/models';
 
 @Component({
   selector: 'app-visitor-dashboard',
@@ -15,11 +15,13 @@ export class VisitorDashboardComponent implements OnInit, OnDestroy {
   loggingOut = false;
 
   qrDataUrl = '';
-  loading = true;         // first-load spinner
-  refreshing = false;     // a fetch/render is in flight (re-entrancy guard)
+  loading = true;
+  refreshing = false;
   error = '';
-  countdown = 0;          // seconds until the current QR expires
-  ttl = 30;               // full validity window (for the progress bar)
+  countdown = 0;
+  ttl = 30;
+
+  history: VisitorHistory | null = null;
 
   private tickHandle: any;
 
@@ -35,6 +37,7 @@ export class VisitorDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.refreshQr();
+    this.loadHistory();
     this.tickHandle = setInterval(() => this.tick(), 1000);
   }
 
@@ -45,13 +48,13 @@ export class VisitorDashboardComponent implements OnInit, OnDestroy {
   }
 
   private tick(): void {
-    // Don't run the countdown while a refresh is in flight, on error, or before the first load.
     if (this.refreshing || this.error || !this.qrDataUrl) {
       return;
     }
     this.countdown--;
     if (this.countdown <= 0) {
       this.refreshQr();
+      this.loadHistory();
     }
   }
 
@@ -68,10 +71,9 @@ export class VisitorDashboardComponent implements OnInit, OnDestroy {
           errorCorrectionLevel: 'M',
           margin: 2,
           width: 320,
-          color: { dark: '#111827', light: '#ffffff' },
+          color: { dark: '#0f172a', light: '#ffffff' },
         })
           .then((url: string) => {
-            // Ensure state changes are seen by Angular's change detection.
             this.zone.run(() => {
               this.qrDataUrl = url;
               this.ttl = res.expiresInSeconds || 30;
@@ -87,7 +89,16 @@ export class VisitorDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** On failure: stop the spinner, show the error, and do NOT auto-retry (manual Retry only). */
+  loadHistory(): void {
+    this.qr.getHistory().subscribe({
+      next: (h) => {
+        this.history = h;
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
   private fail(message: string): void {
     this.zone.run(() => {
       this.loading = false;

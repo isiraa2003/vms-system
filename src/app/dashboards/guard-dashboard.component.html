@@ -1,66 +1,96 @@
-<div class="dash">
-  <header class="dash-topbar">
-    <div class="dash-brand"><span class="dot">V</span> VMS</div>
-    <div class="dash-user">
-      <span>{{ user?.fullName }}</span>
-      <span class="dash-role-badge">Security Guard</span>
-      <button class="dash-logout" (click)="logout()" [disabled]="loggingOut">
+<div class="app">
+  <header class="appbar">
+    <div class="brand"><span class="logo">V</span> VMS</div>
+    <div class="appbar-right">
+      <div class="who">
+        <span class="name">{{ user?.fullName }}</span>
+        <span class="role-chip">Security Guard</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" (click)="logout()" [disabled]="loggingOut">
         {{ loggingOut ? 'Signing out…' : 'Log out' }}
       </button>
     </div>
   </header>
 
-  <main class="scan-main">
-    <div class="scan-left">
-      <h1 class="scan-title">Scan Visitor QR</h1>
-      <p class="scan-sub">Point the camera at the visitor's QR pass.</p>
-
-      <div class="scan-viewport">
-        <video #video class="scan-video" [class.dim]="!!outcome" muted autoplay playsinline></video>
-        <div class="scan-reticle" *ngIf="scanning && !outcome"></div>
-
-        <!-- Result overlay -->
-        <div class="scan-result" *ngIf="outcome" [class.granted]="outcome.granted" [class.denied]="!outcome.granted">
-          <div class="scan-result-icon">{{ outcome.granted ? '✓' : '✕' }}</div>
-          <div class="scan-result-title">{{ outcome.title }}</div>
-          <div class="scan-result-detail">{{ outcome.detail }}</div>
-          <button class="scan-result-btn" (click)="clearOutcome()">Scan next</button>
-        </div>
-
-        <!-- Camera unavailable -->
-        <div class="scan-camera-error" *ngIf="cameraError && !scanning && !outcome">
-          <span>📷 {{ cameraError }}</span>
-          <button class="qr-retry" (click)="startScanner()">Enable camera</button>
-        </div>
-
-        <div class="scan-processing" *ngIf="processing">Validating…</div>
-      </div>
-
-      <!-- Manual fallback / testing -->
-      <div class="scan-manual">
-        <label>Or paste a token to validate</label>
-        <div class="scan-manual-row">
-          <input type="text" [(ngModel)]="manualToken" name="manualToken" placeholder="VMS1...." class="scan-input" />
-          <button class="scan-validate-btn" (click)="submitManual()" [disabled]="processing">Validate</button>
-        </div>
-      </div>
+  <main class="page">
+    <div class="page-head">
+      <div class="page-title">Gate Scanner</div>
+      <div class="page-sub">Choose the direction, then scan the visitor's QR pass.</div>
     </div>
 
-    <aside class="scan-right">
-      <h2 class="recent-title">Recent scans</h2>
-      <div class="recent-empty" *ngIf="recent.length === 0">No scans yet.</div>
-      <ul class="recent-list">
-        <li class="recent-item" *ngFor="let r of recent" [class.granted]="r.result === 'GRANTED'"
-          [class.denied]="r.result === 'DENIED'">
-          <div class="recent-dot"></div>
-          <div class="recent-body">
-            <div class="recent-name">{{ r.visitorName || 'Unknown' }}
-              <span class="recent-tag">{{ r.result }}</span>
-            </div>
-            <div class="recent-meta">{{ r.reason }} · {{ r.scannedAt | date: 'short' }}</div>
+    <div class="scan-grid">
+      <!-- Scanner -->
+      <div class="card card-pad">
+        <div class="scan-modebar">
+          <div class="seg big">
+            <button [class.active]="mode === 'CHECK_IN'" [class.in]="true" (click)="setMode('CHECK_IN')">⬇ Check In</button>
+            <button [class.active]="mode === 'CHECK_OUT'" [class.out]="true" (click)="setMode('CHECK_OUT')">⬆ Check Out</button>
           </div>
-        </li>
-      </ul>
-    </aside>
+          <select class="camera-select" *ngIf="cameras.length > 1"
+            [value]="selectedCamera" (change)="switchCamera($any($event.target).value)">
+            <option *ngFor="let c of cameras" [value]="c.id">{{ c.label }}</option>
+          </select>
+        </div>
+
+        <div class="scan-viewport">
+          <video #video class="scan-video" [class.dim]="!!outcome" muted autoplay playsinline></video>
+
+          <div class="scan-reticle scan-corners" *ngIf="scanning && !outcome && !processing"><i></i></div>
+          <div class="scan-laser" *ngIf="scanning && !outcome && !processing"></div>
+
+          <div class="scan-result" *ngIf="outcome" [class.granted]="outcome.granted" [class.denied]="!outcome.granted">
+            <div class="ic">{{ outcome.granted ? '✓' : '✕' }}</div>
+            <div class="rtitle">{{ outcome.title }}</div>
+            <div class="dir" *ngIf="outcome.direction">{{ outcome.direction === 'CHECK_OUT' ? 'Check Out' : 'Check In' }}</div>
+            <div class="rdetail">{{ outcome.detail }}</div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px" (click)="clearOutcome()">Scan next</button>
+          </div>
+
+          <div class="scan-overlay-msg" *ngIf="cameraError && !scanning && !outcome">
+            <span>📷 {{ cameraError }}</span>
+            <button class="btn btn-ghost btn-sm" (click)="startScanner()">Enable camera</button>
+          </div>
+
+          <div class="scan-processing" *ngIf="processing">Validating…</div>
+        </div>
+
+        <!-- Fallbacks -->
+        <label class="field-label">Upload a QR image (if the camera can't read it)</label>
+        <div class="scan-tools">
+          <input type="file" accept="image/*" (change)="onFile($event)" />
+        </div>
+
+        <label class="field-label">Or paste a token</label>
+        <div class="scan-tools">
+          <input type="text" class="scan-input" [(ngModel)]="manualToken" name="manualToken" placeholder="VMS1...." />
+          <button class="btn btn-primary" (click)="submitManual()" [disabled]="processing">Validate</button>
+        </div>
+      </div>
+
+      <!-- Recent scans -->
+      <div class="card card-pad">
+        <div class="section-title">Recent scans</div>
+        <div class="empty" *ngIf="recent.length === 0">No scans yet.</div>
+        <ul class="list" *ngIf="recent.length > 0">
+          <li class="list-row" *ngFor="let r of recent"
+            [class.in]="r.result === 'GRANTED' && r.direction === 'CHECK_IN'"
+            [class.out]="r.result === 'GRANTED' && r.direction === 'CHECK_OUT'"
+            [class.denied]="r.result === 'DENIED'">
+            <span class="rdot"></span>
+            <div>
+              <div class="rname">
+                {{ r.visitorName || 'Unknown' }}
+                <span class="pill" [class.in]="r.direction==='CHECK_IN' && r.result==='GRANTED'"
+                  [class.out]="r.direction==='CHECK_OUT' && r.result==='GRANTED'"
+                  [class.off]="r.result==='DENIED'">
+                  {{ r.result === 'DENIED' ? 'DENIED' : (r.direction === 'CHECK_OUT' ? 'OUT' : 'IN') }}
+                </span>
+              </div>
+              <div class="rmeta">{{ r.reason }} · {{ r.scannedAt | date: 'short' }}</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
   </main>
 </div>

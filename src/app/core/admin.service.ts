@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE } from './api.config';
-import { AccessLogRow, AdminStats, AdminUser, Role } from './models';
+import { AccessLogRow, AdminStats, AdminUser, PresentVisitor, Role } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -28,5 +28,9 @@ export class AdminService {
 
   getLogs(): Observable<AccessLogRow[]> {
     return this.http.get<AccessLogRow[]>(`${this.base}/logs`);
+  }
+
+  getPresent(): Observable<PresentVisitor[]> {
+    return this.http.get<PresentVisitor[]>(`${this.base}/present`);
   }
 }

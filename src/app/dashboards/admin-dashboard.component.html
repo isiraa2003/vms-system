@@ -1,89 +1,114 @@
-<div class="dash">
-  <header class="dash-topbar">
-    <div class="dash-brand"><span class="dot">V</span> VMS</div>
-    <div class="dash-user">
-      <span>{{ user?.fullName }}</span>
-      <span class="dash-role-badge">Administrator</span>
-      <button class="dash-logout" (click)="logout()" [disabled]="loggingOut">
+<div class="app">
+  <header class="appbar">
+    <div class="brand"><span class="logo">V</span> VMS</div>
+    <div class="appbar-right">
+      <div class="who">
+        <span class="name">{{ user?.fullName }}</span>
+        <span class="role-chip">Administrator</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" (click)="logout()" [disabled]="loggingOut">
         {{ loggingOut ? 'Signing out…' : 'Log out' }}
       </button>
     </div>
   </header>
 
-  <main class="admin-main">
-    <h1 class="admin-title">Admin Dashboard</h1>
+  <main class="page">
+    <div class="page-head">
+      <div class="page-title">Admin Dashboard</div>
+      <div class="page-sub">People on site, user management, and the access audit trail.</div>
+    </div>
 
-    <!-- Stat cards -->
-    <div class="stat-grid" *ngIf="stats">
-      <div class="stat-card"><div class="stat-num">{{ stats.totalUsers }}</div><div class="stat-label">Total users</div></div>
-      <div class="stat-card"><div class="stat-num">{{ stats.visitors }}</div><div class="stat-label">Visitors</div></div>
-      <div class="stat-card"><div class="stat-num">{{ stats.guards }}</div><div class="stat-label">Guards</div></div>
-      <div class="stat-card granted"><div class="stat-num">{{ stats.grantedToday }}</div><div class="stat-label">Granted (24h)</div></div>
-      <div class="stat-card denied"><div class="stat-num">{{ stats.deniedToday }}</div><div class="stat-label">Denied (24h)</div></div>
+    <!-- Stats -->
+    <div class="stats" *ngIf="stats">
+      <div class="stat inside"><div class="num">{{ stats.currentlyInside }}</div><div class="lbl">Inside now</div></div>
+      <div class="stat"><div class="num">{{ stats.totalUsers }}</div><div class="lbl">Total users</div></div>
+      <div class="stat"><div class="num">{{ stats.visitors }}</div><div class="lbl">Visitors</div></div>
+      <div class="stat"><div class="num">{{ stats.guards }}</div><div class="lbl">Guards</div></div>
+      <div class="stat ok"><div class="num">{{ stats.grantedToday }}</div><div class="lbl">Granted (24h)</div></div>
+      <div class="stat bad"><div class="num">{{ stats.deniedToday }}</div><div class="lbl">Denied (24h)</div></div>
     </div>
 
     <div class="server-error" *ngIf="error">{{ error }}</div>
 
-    <!-- Tabs -->
-    <div class="admin-tabs">
-      <button class="admin-tab" [class.active]="tab === 'users'" (click)="selectTab('users')">Users</button>
-      <button class="admin-tab" [class.active]="tab === 'logs'" (click)="selectTab('logs')">Access Logs</button>
+    <div class="tabs">
+      <button class="tab" [class.active]="tab === 'present'" (click)="selectTab('present')">Present now</button>
+      <button class="tab" [class.active]="tab === 'users'" (click)="selectTab('users')">Users</button>
+      <button class="tab" [class.active]="tab === 'logs'" (click)="selectTab('logs')">Access Logs</button>
+    </div>
+
+    <!-- Present now -->
+    <div class="card card-pad" *ngIf="tab === 'present'">
+      <div class="section-title">Currently inside ({{ present.length }})</div>
+      <div class="muted" *ngIf="loadingPresent">Loading…</div>
+      <div class="empty" *ngIf="!loadingPresent && present.length === 0">Nobody is checked in right now.</div>
+      <ul class="list" *ngIf="!loadingPresent && present.length > 0">
+        <li class="list-row in" *ngFor="let p of present">
+          <span class="rdot"></span>
+          <div>
+            <div class="rname">{{ p.visitorName || 'Unknown' }} <span class="pill in">{{ p.visitorRole }}</span></div>
+            <div class="rmeta">Since {{ p.since | date: 'medium' }}</div>
+          </div>
+        </li>
+      </ul>
     </div>
 
     <!-- Users -->
-    <div class="admin-panel" *ngIf="tab === 'users'">
+    <div class="card card-pad" *ngIf="tab === 'users'">
       <div class="muted" *ngIf="loadingUsers">Loading users…</div>
-      <table class="admin-table" *ngIf="!loadingUsers">
-        <thead>
-          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let u of users">
-            <td>{{ u.fullName }} <span class="self-tag" *ngIf="isSelf(u)">you</span></td>
-            <td class="muted">{{ u.email }}</td>
-            <td>
-              <select [value]="u.role" (change)="changeRole(u, $any($event.target).value)" [disabled]="isSelf(u)">
-                <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
-              </select>
-            </td>
-            <td>
-              <span class="status-pill" [class.on]="u.enabled" [class.off]="!u.enabled">
-                {{ u.enabled ? 'Active' : 'Disabled' }}
-              </span>
-            </td>
-            <td>
-              <button class="row-btn" (click)="toggleEnabled(u)" [disabled]="isSelf(u)">
-                {{ u.enabled ? 'Disable' : 'Enable' }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-wrap" *ngIf="!loadingUsers">
+        <table class="tbl">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of users">
+              <td data-label="Name">{{ u.fullName }} <span class="self-tag" *ngIf="isSelf(u)">you</span></td>
+              <td data-label="Email" class="muted">{{ u.email }}</td>
+              <td data-label="Role">
+                <select [value]="u.role" (change)="changeRole(u, $any($event.target).value)" [disabled]="isSelf(u)">
+                  <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+                </select>
+              </td>
+              <td data-label="Status">
+                <span class="pill" [class.on]="u.enabled" [class.off]="!u.enabled">{{ u.enabled ? 'Active' : 'Disabled' }}</span>
+              </td>
+              <td data-label="Action">
+                <button class="btn btn-ghost btn-sm" (click)="toggleEnabled(u)" [disabled]="isSelf(u)">
+                  {{ u.enabled ? 'Disable' : 'Enable' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Access logs -->
-    <div class="admin-panel" *ngIf="tab === 'logs'">
+    <div class="card card-pad" *ngIf="tab === 'logs'">
       <div class="muted" *ngIf="loadingLogs">Loading logs…</div>
-      <div class="muted" *ngIf="!loadingLogs && logs.length === 0">No access logs yet.</div>
-      <table class="admin-table" *ngIf="!loadingLogs && logs.length > 0">
-        <thead>
-          <tr><th>Visitor</th><th>Role</th><th>Guard</th><th>Result</th><th>Reason</th><th>Time</th></tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let l of logs">
-            <td>{{ l.visitorName || '—' }}</td>
-            <td class="muted">{{ l.visitorRole || '—' }}</td>
-            <td class="muted">{{ l.guardName || '—' }}</td>
-            <td>
-              <span class="status-pill" [class.on]="l.result === 'GRANTED'" [class.off]="l.result === 'DENIED'">
-                {{ l.result }}
-              </span>
-            </td>
-            <td class="muted">{{ l.reason }}</td>
-            <td class="muted">{{ l.scannedAt | date: 'short' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="empty" *ngIf="!loadingLogs && logs.length === 0">No access logs yet.</div>
+      <div class="table-wrap" *ngIf="!loadingLogs && logs.length > 0">
+        <table class="tbl">
+          <thead>
+            <tr><th>Visitor</th><th>Direction</th><th>Guard</th><th>Result</th><th>Reason</th><th>Time</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of logs">
+              <td data-label="Visitor">{{ l.visitorName || '—' }}</td>
+              <td data-label="Direction">
+                <span class="pill" [class.in]="l.direction==='CHECK_IN'" [class.out]="l.direction==='CHECK_OUT'"
+                  [class.neutral]="!l.direction">{{ l.direction === 'CHECK_OUT' ? 'OUT' : (l.direction === 'CHECK_IN' ? 'IN' : '—') }}</span>
+              </td>
+              <td data-label="Guard" class="muted">{{ l.guardName || '—' }}</td>
+              <td data-label="Result">
+                <span class="pill" [class.on]="l.result === 'GRANTED'" [class.off]="l.result === 'DENIED'">{{ l.result }}</span>
+              </td>
+              <td data-label="Reason" class="muted">{{ l.reason }}</td>
+              <td data-label="Time" class="muted">{{ l.scannedAt | date: 'short' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </main>
 </div>

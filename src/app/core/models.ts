@@ -60,12 +60,14 @@ export interface QrTokenResponse {
 }
 
 export type AccessResult = 'GRANTED' | 'DENIED';
+export type ScanDirection = 'CHECK_IN' | 'CHECK_OUT';
 
 export interface ScanResultResponse {
   granted: boolean;
   message: string;
   visitorName?: string;
   visitorRole?: string;
+  direction?: ScanDirection;
   scannedAt: string;
 }
 
@@ -73,8 +75,30 @@ export interface ScanLog {
   visitorName?: string;
   visitorRole?: string;
   result: AccessResult;
+  direction?: ScanDirection;
   reason: string;
   scannedAt: string;
+}
+
+export interface VisitorEvent {
+  direction?: ScanDirection;
+  result: AccessResult;
+  reason: string;
+  scannedAt: string;
+}
+
+export interface VisitorHistory {
+  inside: boolean;
+  since?: string;
+  totalVisits: number;
+  events: VisitorEvent[];
+}
+
+export interface PresentVisitor {
+  visitorId: string;
+  visitorName?: string;
+  visitorRole?: string;
+  since?: string;
 }
 
 /** Prefix that identifies a legitimate VMS-issued encrypted QR payload. */
@@ -98,6 +122,7 @@ export interface AccessLogRow {
   visitorRole?: string;
   guardName?: string;
   result: AccessResult;
+  direction?: ScanDirection;
   reason: string;
   scannedAt: string;
 }
@@ -107,6 +132,7 @@ export interface AdminStats {
   visitors: number;
   guards: number;
   admins: number;
+  currentlyInside: number;
   grantedToday: number;
   deniedToday: number;
 }
